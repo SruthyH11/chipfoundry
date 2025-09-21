@@ -34,19 +34,18 @@ I will design and verify a memory-mapped, single-channel DMA controller that int
 
 ---
 
-### 4. Block Diagram (Conceptual)
+### 4. High-Level Block Diagram (Conceptual)
 
 The DMA controller will interface with the CPU and Memory via the main system bus.
-
 +---------------+      +------------------+      +------------------+
 | Microwatt CPU | <--> |   System Bus     | <--> |  DMA Controller  |
-+---------------+      | (e.g., AXI/Wishbone) |      |   (WattMover)    |
-                       +------------------+      +------------------+
-                                |                      | (Master)
-                                V                      V
-                       +------------------------------------------+
-                       |                  Memory                  |
-                       +------------------------------------------+
++---------------+      | (e.g., AXI/Wishbone) |  |   (WattMover)    |
++------------------+      +------------------+
+|                      | (Master)
+V                      V
++------------------------------------------+
+|                  Memory                  |
++------------------------------------------+
 ### 5. Expected Outcome & Success Criteria
 
 The final deliverable will be a fully verified and synthesizable DMA controller IP integrated within the OpenFrame user project area.
