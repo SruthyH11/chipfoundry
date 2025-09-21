@@ -38,19 +38,24 @@ I will design and verify a memory-mapped, single-channel DMA controller that int
 
 The DMA controller will interface with the CPU and Memory via the main system bus.
 
-[Microwatt CPU] <--> [System Bus] <--> [DMA Controller]
-                        ^                  |
-                        |                  V
-                     [Memory] <------------+
----
-## Future Enhancements
-- Multi-channel DMA.  
-- Burst transfers for higher throughput.  
-- Scatter-gather list support.  
-- Integration with high-speed buses (AXI/AHB).  
++---------------+      +------------------+      +------------------+
+| Microwatt CPU | <--> |   System Bus     | <--> |  DMA Controller  |
++---------------+      | (e.g., AXI/Wishbone) |      |   (WattMover)    |
++------------------+      +------------------+
+|                      | (Master)
+V                      V
++------------------------------------------+
+|                  Memory                  |
++------------------------------------------+
 
 ### 5. Expected Outcome & Success Criteria
 
 The final deliverable will be a fully verified and synthesizable DMA controller IP integrated within the OpenFrame user project area.
 
 The project's success will be measured by a clear performance benchmark: a direct comparison of the CPU cycles required for a software-based memory copy versus a DMA-assisted copy. The expected outcome is a greater than 95% reduction in CPU overhead for the benchmarked task, proving the design's significant impact and value to the OpenPOWER ecosystem.
+### 6. Future Enhancements
+- Multi-channel DMA.  
+- Burst transfers for higher throughput.  
+- Scatter-gather list support.  
+- Integration with high-speed buses (AXI/AHB).  
+
