@@ -1,75 +1,56 @@
-# OpenFrame Overview
+# Microwatt Momentum Hackathon: Project Proposal
 
-The OpenFrame Project provides an empty harness chip that differs significantly from the Caravel and Caravan designs. Unlike Caravel and Caravan, which include integrated SoCs and additional features, OpenFrame offers only the essential padframe, providing users with a clean slate for their custom designs.
+## WattMover - A Programmable DMA Controller for Microwatt
 
-<img width="256" alt="Screenshot 2024-06-24 at 12 53 39 PM" src="https://github.com/efabless/openframe_timer_example/assets/67271180/ff58b58b-b9c8-4d5e-b9bc-bf344355fa80">
+**Author:** SRUTHY H
+**GitHub:** SruthyH11
 
-## Key Characteristics of OpenFrame
+---
 
-1. **Minimalist Design:** 
-   - No integrated SoC or additional circuitry.
-   - Only includes the padframe, a power-on-reset circuit, and a digital ROM containing the 32-bit project ID.
+### 1. Project Description
 
-2. **Padframe Compatibility:**
-   - The padframe design and pin placements match those of the Caravel and Caravan chips, ensuring compatibility and ease of transition between designs.
-   - Pin types are identical, with power and ground pins positioned similarly and the same power domains available.
+This project proposes the design and implementation of "WattMover," a programmable Direct Memory Access (DMA) controller tailored for the Microwatt-based OpenFrame SoC. The primary goal of a DMA is to offload the main CPU from handling large, repetitive data transfer tasks. By delegating these bulk memory operations to this specialized hardware unit, the Microwatt CPU is freed up to perform more complex computational work, thereby significantly improving overall system performance and efficiency.
 
-3. **Flexibility:**
-   - Provides full access to all GPIO controls.
-   - Maximizes the user project area, allowing for greater customization and integration of alternative SoCs or user-specific projects at the same hierarchy level.
+---
 
-4. **Simplified I/O:**
-   - Pins that previously connected to CPU functions (e.g., flash controller interface, SPI interface, UART) are now repurposed as general-purpose I/O, offering flexibility for various applications.
+### 2. Problem Statement
 
-The OpenFrame harness is ideal for those looking to implement custom SoCs or integrate user projects without the constraints of an existing SoC.
+In a typical embedded system, moving blocks of data—such as sensor readings or communication packets—requires the CPU to execute a software loop. This process consumes thousands of valuable CPU cycles, stalls the execution of other critical tasks, and creates a performance bottleneck. This project directly addresses this inefficiency by providing a dedicated hardware solution.
 
-## Features
+---
 
-1. 44 configurable GPIOs.
-2. User area of approximately 15mm².
-3. Supports digital, analog, or mixed-signal designs.
+### 3. Proposed Solution & Key Features
 
-# openframe_timer_example
+I will design and verify a memory-mapped, single-channel DMA controller that integrates cleanly into the OpenFrame SoC. The Microwatt CPU will control the DMA through a simple register interface.
 
-This example implements a simple timer and connects it to the GPIOs.
+**Key Features:**
+* **Programmable Registers:** The CPU will configure transfers by writing to:
+    * `SOURCE_ADDRESS` Register
+    * `DESTINATION_ADDRESS` Register
+    * `TRANSFER_SIZE` Register
+    * `CONTROL_STATUS` Register (to start the transfer and check for completion).
+* **Independent Bus Master:** The DMA will operate as an independent master on the system bus to perform memory operations without CPU intervention.
+* **Interrupt on Completion:** Upon finishing a data transfer, the DMA will assert an interrupt to notify the CPU that the data is ready.
 
-## Installation and Setup
+---
 
-First, clone the repository:
+### 4. Block Diagram (Conceptual)
 
-```bash
-git clone https://github.com/efabless/openframe_timer_example.git
-cd openframe_timer_example
-```
+The DMA controller will interface with the CPU and Memory via the main system bus.
 
-Then, download all dependencies:
+[Microwatt CPU] <--> [System Bus] <--> [DMA Controller]
+                        ^                  |
+                        |                  V
+                     [Memory] <------------+
+---
+## Future Enhancements
+- Multi-channel DMA.  
+- Burst transfers for higher throughput.  
+- Scatter-gather list support.  
+- Integration with high-speed buses (AXI/AHB).  
 
-```bash
-make setup
-```
+### 5. Expected Outcome & Success Criteria
 
-## Hardening the Design
+The final deliverable will be a fully verified and synthesizable DMA controller IP integrated within the OpenFrame user project area.
 
-In this example, we will harden the timer. You will need to harden your own design similarly.
-
-```bash
-make user_proj_timer
-```
-
-Once you have hardened your design, integrate it into the OpenFrame wrapper:
-
-```bash
-make openframe_project_wrapper
-```
-
-## Important Notes
-
-1. **Connecting to Power:**
-   - Ensure your design is connected to power using the power pins on the wrapper.
-   - Use the `vccd1_connection` and `vssd1_connection` macros, which contain the necessary vias and nets for power connections.
-
-2. **Flattening the Design:**
-   - If you plan to flatten your design within the `openframe_project_wrapper`, do not buffer the analog pins using standard cells.
-
-3. **Running Custom Steps:**
-   - Execute the custom step in OpenLane that copies the power pins from the template DEF. If this step is skipped, the precheck will fail, and your design will not be powered.
+The project's success will be measured by a clear performance benchmark: a direct comparison of the CPU cycles required for a software-based memory copy versus a DMA-assisted copy. The expected outcome is a greater than 95% reduction in CPU overhead for the benchmarked task, proving the design's significant impact and value to the OpenPOWER ecosystem.
