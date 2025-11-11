@@ -1,0 +1,124 @@
+module wattmover_dma (
+    input  wire        clk,
+    input  wire        rst_n,
+
+    // CPU Register Interface
+    input  wire [3:0]  addr,         
+    input  wire [31:0] wdata,        
+    input  wire        we,           
+    input  wire        re,           
+    output reg  [31:0] rdata,        
+
+    // Control signals
+    output reg         irq_done,     
+
+    // Memory interface
+    output reg  [31:0] mem_addr,
+    output reg         mem_read,
+    output reg         mem_write,
+    output reg  [31:0] mem_wdata,
+    input  wire [31:0] mem_rdata,
+
+    output reg         dma_busy
+);
+
+    reg [31:0] src_addr;        
+    reg [31:0] dest_addr;       
+    reg [31:0] transfer_size;   
+    reg [31:0] control;         
+    reg [31:0] count;
+    reg [1:0]  state;
+
+    localparam IDLE  = 2'b00;
+    localparam READ  = 2'b01;
+    localparam WRITE = 2'b10;
+    localparam DONE  = 2'b11;
+
+    // Register Write
+    always @(posedge clk or negedge rst_n) begin
+        if (!rst_n) begin
+            src_addr      <= 0;
+            dest_addr     <= 0;
+            transfer_size <= 0;
+            control       <= 0;
+        end else if (we) begin
+            case (addr)
+                4'h0: src_addr      <= wdata;
+                4'h1: dest_addr     <= wdata;
+                4'h2: transfer_size <= wdata;
+                4'h3: control       <= wdata;
+            endcase
+        end
+    end
+
+    // Register Read
+    always @(*) begin
+        case (addr)
+            4'h0: rdata = src_addr;
+            4'h1: rdata = dest_addr;
+            4'h2: rdata = transfer_size;
+            4'h3: rdata = control;
+            default: rdata = 32'd0;
+        endcase
+    end
+
+    // DMA FSM
+    always @(posedge clk or negedge rst_n) begin
+        if (!rst_n) begin
+            state <= IDLE;
+            count <= 0;
+            mem_addr <= 0;
+            mem_read <= 0;
+            mem_write <= 0;
+            dma_busy <= 0;
+            irq_done <= 0;
+            mem_wdata <= 0;
+        end else begin
+            case (state)
+                IDLE: begin
+                    dma_busy <= 0;
+                    irq_done <= 0;
+                    mem_read <= 0;
+                    mem_write <= 0;
+                    if (control[0]) begin
+                        dma_busy <= 1;
+                        count <= 0;
+                        state <= READ;
+                        $display("[%0t] DMA STARTED", $time);
+                    end
+                end
+
+                READ: begin
+                    mem_addr <= src_addr + count;
+                    mem_read <= 1;
+                    mem_write <= 0;
+                    state <= WRITE;
+                end
+
+                WRITE: begin
+                    mem_read <= 0;
+                    mem_write <= 1;
+                    mem_addr <= dest_addr + count;
+                    mem_wdata <= mem_rdata;
+                    count <= count + 4;
+
+                    if (count >= transfer_size)
+                        state <= DONE;
+                    else
+                        state <= READ;
+                end
+
+                DONE: begin
+                    mem_write <= 0;
+                    dma_busy <= 0;
+                    irq_done <= 1;
+                    control[1] <= 1;
+                    control[0] <= 0;
+                    state <= IDLE;
+                    $display("[%0t] DMA DONE â", $time);
+                end
+            endcase
+        end
+    end
+
+endmodule
